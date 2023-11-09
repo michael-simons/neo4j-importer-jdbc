@@ -1,0 +1,317 @@
+{
+  "version": "1.1.0",
+  "graph": {
+    "nodes": [
+      {
+        "id": "n0",
+        "position": {
+          "x": -133,
+          "y": -137
+        },
+        "caption": "State"
+      },
+      {
+        "id": "n1",
+        "position": {
+          "x": 200,
+          "y": -84
+        },
+        "caption": "County"
+      }
+    ],
+    "relationships": [
+      {
+        "id": "n0",
+        "type": "HAS",
+        "fromId": "n0",
+        "toId": "n1"
+      }
+    ]
+  },
+  "dataModel": {
+    "version": "1.1.0",
+    "graphSchemaRepresentation": {
+      "version": "1.0.0",
+      "graphSchema": {
+        "nodeLabels": [
+          {
+            "$id": "nl:n0",
+            "token": "State"
+          },
+          {
+            "$id": "nl:n1",
+            "token": "County"
+          }
+        ],
+        "relationshipTypes": [
+          {
+            "$id": "rt:n0",
+            "token": "HAS"
+          }
+        ],
+        "nodeObjectTypes": [
+          {
+            "$id": "n:n0",
+            "labels": [
+              {
+                "$ref": "#nl:n0"
+              }
+            ],
+            "properties": [
+              {
+                "$id": "p:1",
+                "token": "state",
+                "type": {
+                  "type": "string"
+                },
+                "nullable": true
+              },
+              {
+                "$id": "p:2",
+                "token": "latitude",
+                "type": {
+                  "type": "float"
+                },
+                "nullable": true
+              },
+              {
+                "$id": "p:3",
+                "token": "longitude",
+                "type": {
+                  "type": "float"
+                },
+                "nullable": true
+              },
+              {
+                "$id": "p:4",
+                "token": "name",
+                "type": {
+                  "type": "string"
+                },
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "$id": "n:n1",
+            "labels": [
+              {
+                "$ref": "#nl:n1"
+              }
+            ],
+            "properties": [
+              {
+                "$id": "p:5",
+                "token": "us_county",
+                "type": {
+                  "type": "integer"
+                },
+                "nullable": true
+              },
+              {
+                "$id": "p:6",
+                "token": "name",
+                "type": {
+                  "type": "string"
+                },
+                "nullable": true
+              },
+              {
+                "$id": "p:7",
+                "token": "state",
+                "type": {
+                  "type": "string"
+                },
+                "nullable": true
+              }
+            ]
+          }
+        ],
+        "relationshipObjectTypes": [
+          {
+            "$id": "r:n0",
+            "type": {
+              "$ref": "#rt:n0"
+            },
+            "from": {
+              "$ref": "#n:n0"
+            },
+            "to": {
+              "$ref": "#n:n1"
+            },
+            "properties": []
+          }
+        ]
+      }
+    },
+    "graphSchemaExtensionsRepresentation": {
+      "nodeKeyProperties": [
+        {
+          "node": {
+            "$ref": "#n:n0"
+          },
+          "keyProperty": {
+            "$ref": "#p:1"
+          }
+        },
+        {
+          "node": {
+            "$ref": "#n:n1"
+          },
+          "keyProperty": {
+            "$ref": "#p:5"
+          }
+        }
+      ]
+    },
+    "graphMappingRepresentation": {
+      "fileSchemas": [
+        {
+          "$id": "f:1",
+          "fileName": "us_counties.csv",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "us_county",
+              "type": "integer",
+              "sample": "2013",
+              "include": true
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "sample": "Aleutians East Borough, AK",
+              "include": true
+            },
+            {
+              "name": "state",
+              "type": "string",
+              "sample": "AK",
+              "include": true
+            }
+          ]
+        },
+        {
+          "$id": "f:2",
+          "fileName": "states.csv",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "state",
+              "type": "string",
+              "sample": "AK",
+              "include": true
+            },
+            {
+              "name": "latitude",
+              "type": "float",
+              "sample": "63.588753",
+              "include": true
+            },
+            {
+              "name": "longitude",
+              "type": "float",
+              "sample": "-154.493062",
+              "include": true
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "sample": "Alaska",
+              "include": true
+            }
+          ]
+        }
+      ],
+      "nodeMappings": [
+        {
+          "node": {
+            "$ref": "#n:n0"
+          },
+          "fileSchema": {
+            "$ref": "#f:2"
+          },
+          "propertyMappings": [
+            {
+              "fieldName": "state",
+              "property": {
+                "$ref": "#p:1"
+              }
+            },
+            {
+              "fieldName": "latitude",
+              "property": {
+                "$ref": "#p:2"
+              }
+            },
+            {
+              "fieldName": "longitude",
+              "property": {
+                "$ref": "#p:3"
+              }
+            },
+            {
+              "fieldName": "name",
+              "property": {
+                "$ref": "#p:4"
+              }
+            }
+          ]
+        },
+        {
+          "node": {
+            "$ref": "#n:n1"
+          },
+          "fileSchema": {
+            "$ref": "#f:1"
+          },
+          "propertyMappings": [
+            {
+              "fieldName": "us_county",
+              "property": {
+                "$ref": "#p:5"
+              }
+            },
+            {
+              "fieldName": "name",
+              "property": {
+                "$ref": "#p:6"
+              }
+            },
+            {
+              "fieldName": "state",
+              "property": {
+                "$ref": "#p:7"
+              }
+            }
+          ]
+        }
+      ],
+      "relationshipMappings": [
+        {
+          "relationship": {
+            "$ref": "#r:n0"
+          },
+          "fileSchema": {
+            "$ref": "#f:1"
+          },
+          "propertyMappings": [],
+          "fromMapping": {
+            "fieldName": "state"
+          },
+          "toMapping": {
+            "fieldName": "us_county"
+          }
+        }
+      ]
+    },
+    "configurations": {
+      "idsToIgnore": []
+    },
+    "errors": {
+      "fileSchemaErrors": [],
+      "nodeErrors": [],
+      "relationshipErrors": []
+    }
+  }
+}
