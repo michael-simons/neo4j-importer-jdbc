@@ -102,7 +102,7 @@
             "properties": [
               {
                 "$id": "p:5",
-                "token": "us_county",
+                "token": "id",
                 "type": {
                   "type": "integer"
                 },

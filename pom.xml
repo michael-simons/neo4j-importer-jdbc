@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.neo4j</groupId>
@@ -9,24 +7,118 @@
 	<version>1.0-SNAPSHOT</version>
 
 	<properties>
-		<java.version>21</java.version>
-		<maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
-		<maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
-		<maven-enforcer-plugin.version>3.0.0</maven-enforcer-plugin.version>
+		<appassembler-maven-plugin.version>2.1.0</appassembler-maven-plugin.version>
+		<cypher-dsl.version>2023.8.1</cypher-dsl.version>
+		<duckdb_jdbc.version>0.9.1</duckdb_jdbc.version>
+		<jackson.version>2.14.2</jackson.version>
+		<java.version>17</java.version>
+		<junit-jupiter.version>5.10.1</junit-jupiter.version>
+		<maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
+		<maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
+		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+		<maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
 		<maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
-		<maven-surefire-plugin.version>3.0.0</maven-surefire-plugin.version>
+		<maven-surefire-plugin.version>3.2.1</maven-surefire-plugin.version>
+		<maven.compiler.parameters>true</maven.compiler.parameters>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.8.7</maven.version>
+		<name-of-main-class>org.neo4j.importer.JdbcImporterApp</name-of-main-class>
 		<neo4j-java-driver.version>5.14.0</neo4j-java-driver.version>
-		<neo4j.version>5.9.0</neo4j.version>
-		<parquet-floor.version>1.38</parquet-floor.version>
+		<neo4j.image>neo4j:${neo4j.version}-enterprise</neo4j.image>
+		<neo4j.version>5.12.0</neo4j.version>
 		<picocli.version>4.7.0</picocli.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<slf4j-simple.version>1.7.36</slf4j-simple.version>
+		<slf4j.version>2.0.9</slf4j.version>
 		<sortpom-maven-plugin.version>3.2.0</sortpom-maven-plugin.version>
-		<cypher-dsl.version>2023.8.1</cypher-dsl.version>
+		<testcontainers.version>1.19.1</testcontainers.version>
 	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.fasterxml.jackson</groupId>
+				<artifactId>jackson-bom</artifactId>
+				<version>${jackson.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.junit</groupId>
+				<artifactId>junit-bom</artifactId>
+				<version>${junit-jupiter.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-bom</artifactId>
+				<version>${slf4j.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-bom</artifactId>
+				<version>${testcontainers.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.module</groupId>
+			<artifactId>jackson-module-parameter-names</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>info.picocli</groupId>
+			<artifactId>picocli</artifactId>
+			<version>${picocli.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-cypher-dsl-schema-name-support</artifactId>
+			<version>${cypher-dsl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j.driver</groupId>
+			<artifactId>neo4j-java-driver</artifactId>
+			<version>${neo4j-java-driver.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.duckdb</groupId>
+			<artifactId>duckdb_jdbc</artifactId>
+			<version>${duckdb_jdbc.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>neo4j</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 	<build>
 		<plugins>
 			<plugin>
@@ -84,27 +176,64 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
+				<configuration>
+					<systemPropertyVariables>
+						<neo4j-jdbc.default-neo4j-image>${neo4j.image}</neo4j-jdbc.default-neo4j-image>
+					</systemPropertyVariables>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>appassembler-maven-plugin</artifactId>
+				<version>${appassembler-maven-plugin.version}</version>
+				<configuration>
+					<assembleDirectory>${project.build.directory}/assembly</assembleDirectory>
+					<repositoryLayout>flat</repositoryLayout>
+					<repositoryName>lib</repositoryName>
+					<programs>
+						<program>
+							<mainClass>${name-of-main-class}</mainClass>
+							<id>${project.parent.artifactId}</id>
+						</program>
+					</programs>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-distribution</id>
+						<goals>
+							<goal>assemble</goal>
+						</goals>
+						<phase>package</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<encoding>UTF-8</encoding>
+					<appendAssemblyId>false</appendAssemblyId>
+				</configuration>
+				<executions>
+					<execution>
+						<id>assembly-java</id>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<outputDirectory>${project.basedir}/../target/artifacts</outputDirectory>
+							<finalName>${project.parent.artifactId}-${project.version}</finalName>
+							<attach>false</attach>
+							<descriptors>
+								<descriptor>src/main/assembly/assembly-java.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
-
-	<dependencies>
-		<dependency>
-			<groupId>org.neo4j.driver</groupId>
-			<artifactId>neo4j-java-driver</artifactId>
-			<version>${neo4j-java-driver.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.neo4j</groupId>
-			<artifactId>neo4j-cypher-dsl-schema-name-support</artifactId>
-			<version>${cypher-dsl.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.duckdb</groupId>
-			<artifactId>duckdb_jdbc</artifactId>
-			<version>0.9.1</version>
-		</dependency>
-	</dependencies>
 
 	<profiles>
 		<profile>
