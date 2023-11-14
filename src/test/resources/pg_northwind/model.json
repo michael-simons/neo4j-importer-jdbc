@@ -1,0 +1,158 @@
+{
+  "version": "1.0.0",
+  "graphSchemaRepresentation": {
+    "version": "1.0.0",
+    "graphSchema": {
+      "nodeLabels": [
+        {
+          "$id": "nl:1",
+          "token": "Order"
+        }
+      ],
+      "relationshipTypes": [],
+      "nodeObjectTypes": [
+        {
+          "$id": "n:1",
+          "labels": [
+            {
+              "$ref": "#nl:1"
+            }
+          ],
+          "properties": [
+            {
+              "$id": "p:11",
+              "token": "id",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            },
+            {
+              "$id": "p:12",
+              "token": "unitPrice",
+              "type": {
+                "type": "float"
+              },
+              "nullable": false
+            },
+            {
+              "$id": "p:13",
+              "token": "quantity",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            },
+            {
+              "$id": "p:14",
+              "token": "discount",
+              "type": {
+                "type": "float"
+              },
+              "nullable": false
+            }
+          ]
+        }
+      ],
+      "relationshipObjectTypes": []
+    }
+  },
+  "graphSchemaExtensionsRepresentation": {
+    "nodeKeyProperties": [
+      {
+        "node": {
+          "$ref": "#n:1"
+        },
+        "keyProperty": {
+          "$ref": "#p:11"
+        }
+      }
+    ]
+  },
+  "graphMappingRepresentation": {
+    "dataSourceSchema": {
+      "type": "sql/postgres",
+      "database": "northwind",
+      "credentialsId": "1",
+      "entities": [
+        {
+          "$id": "t:1",
+          "name": "order_details",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "order_id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": true
+            },
+            {
+              "name": "product_id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": false
+            },
+            {
+              "name": "unit_price",
+              "type": "float",
+              "sample": "",
+              "isPrimary": false
+            },
+            {
+              "name": "quantity",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": false
+            },
+            {
+              "name": "discount",
+              "type": "float",
+              "sample": "",
+              "isPrimary": false
+            }
+          ]
+        }
+      ]
+    },
+    "nodeMappings": [
+      {
+        "node": {
+          "$ref": "#n:1"
+        },
+        "dataSourceEntity": {
+          "$ref": "#t:1"
+        },
+        "propertyMappings": [
+          {
+            "property": {
+              "$ref": "#p:11"
+            },
+            "fieldName": "order_id"
+          },
+          {
+            "property": {
+              "$ref": "#p:12"
+            },
+            "fieldName": "unit_price"
+          },
+          {
+            "property": {
+              "$ref": "#p:13"
+            },
+            "fieldName": "quantity"
+          },
+          {
+            "property": {
+              "$ref": "#p:14"
+            },
+            "fieldName": "discount"
+          }
+        ]
+      }
+    ],
+    "relationshipMappings": []
+  },
+  "configurations": {
+    "idsToIgnore": []
+  }
+}

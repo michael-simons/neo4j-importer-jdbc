@@ -5,9 +5,12 @@ import java.io.IOException;
 import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.JDBCType;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +44,24 @@ class JdbcImporterApp implements Callable<Integer> {
 	String sourceUrl;
 
 	@CommandLine.Option(
+		names = {"-su", "--source-username"},
+		description = "The login of the user connecting to the source database."
+	)
+	String sourceUser;
+
+	@CommandLine.Option(
+		names = {"-sp", "--source-password"},
+		description = "The password of the user connecting to the source database."
+	)
+	char[] sourcePassword;
+
+	@CommandLine.Option(
+		names = {"--source-schema"},
+		description = "The source schema"
+	)
+	String sourceSchema;
+
+	@CommandLine.Option(
 		names = {"-a", "--address"},
 		description = "The address of the Neo4j host.",
 		required = true,
@@ -50,7 +71,7 @@ class JdbcImporterApp implements Callable<Integer> {
 
 	@CommandLine.Option(
 		names = {"-u", "--username"},
-		description = "The login of the user connecting to the database.",
+		description = "The login of the user connecting to the target database.",
 		required = true,
 		defaultValue = "neo4j"
 	)
@@ -58,7 +79,7 @@ class JdbcImporterApp implements Callable<Integer> {
 
 	@CommandLine.Option(
 		names = {"-p", "--password"},
-		description = "The password of the user connecting to the database.",
+		description = "The password of the user connecting to the target database.",
 		required = true,
 		defaultValue = "verysecret"
 	)
@@ -101,8 +122,9 @@ class JdbcImporterApp implements Callable<Integer> {
 	public Integer call() throws Exception {
 
 		var model = buildMapping();
+		var metada = getSourceMetadata();
 		try (
-			var jdbcConnection = DriverManager.getConnection(sourceUrl);
+			var jdbcConnection = getSourceConnection();
 			var hlp = jdbcConnection.createStatement();
 			var neo4jConnection = GraphDatabase.driver(targetUrl, AuthTokens.basic(targetUser, new String(targetPassword)));
 		) {
@@ -116,11 +138,15 @@ class JdbcImporterApp implements Callable<Integer> {
 			UnaryOperator<String> cypherQuotation = v -> SchemaNames.sanitize(v, alwaysQuote).orElseThrow();
 
 			createIndexes(model, neo4jConnection, cypherQuotation);
-			importNodes(model, sqlQuotation, cypherQuotation, jdbcConnection, neo4jConnection);
+			importNodes(model, metada, sqlQuotation, cypherQuotation, jdbcConnection, neo4jConnection);
 			importRelationships(model, sqlQuotation, cypherQuotation, jdbcConnection, neo4jConnection);
 		}
 
 		return 0;
+	}
+
+	private Connection getSourceConnection() throws SQLException {
+		return DriverManager.getConnection(sourceUrl, sourceUser, sourcePassword == null ? null : new String(sourcePassword));
 	}
 
 	private void importRelationships(MappingModel model, UnaryOperator<String> sqlQuotation, UnaryOperator<String> cypherQuotation, Connection jdbcConnection, Driver neo4jConnection) throws SQLException {
@@ -163,7 +189,10 @@ class JdbcImporterApp implements Callable<Integer> {
 		}
 	}
 
-	private void importNodes(MappingModel model, UnaryOperator<String> sqlQuotation, UnaryOperator<String> cypherQuotation, Connection jdbcConnection, Driver neo4jConnection) throws SQLException {
+	private void importNodes(MappingModel model, List<Table> metadata, UnaryOperator<String> sqlQuotation, UnaryOperator<String> cypherQuotation, Connection jdbcConnection, Driver neo4jConnection) throws SQLException {
+
+		var tables = metadata.stream().collect(Collectors.toMap(Table::name, Function.identity()));
+
 		for (var nodeMapping : model.nodeMappings()) {
 			var sourceQuery = createSourceQuery(sqlQuotation, nodeMapping);
 			var targetQuery = createTargetNodeQuery(cypherQuotation, nodeMapping);
@@ -173,9 +202,15 @@ class JdbcImporterApp implements Callable<Integer> {
 			try (var statement = jdbcConnection.prepareStatement(sourceQuery)) {
 				do {
 					var batch = new ArrayList<Map<String, Object>>();
-
-					statement.setObject(1, primaryKey);
-					statement.setObject(2, primaryKey);
+					if (primaryKey == null) {
+						var pkCol = tables.get(nodeMapping.source()).columns().stream().filter(Column::isPrimaryKey).findFirst().orElseThrow();
+						var type = pkCol.type().getVendorTypeNumber();
+						statement.setNull(1, type);
+						statement.setNull(2, type);
+					} else {
+						statement.setObject(1, primaryKey);
+						statement.setObject(2, primaryKey);
+					}
 					statement.setInt(3, batchSize);
 					primaryKey = null;
 
@@ -291,7 +326,8 @@ class JdbcImporterApp implements Callable<Integer> {
 		var raw = this.objectMapper.readValue(model, new TypeReference<HashMap<String, Object>>() {
 		});
 
-		var dataModel = (Map<String, Object>) raw.get("dataModel");
+		var dataModel = raw.containsKey("dataModel") ? ((Map<String, Object>) raw.get("dataModel")) : raw;
+
 		var graphSchemaRepresentation = (Map<String, Object>) dataModel.get("graphSchemaRepresentation");
 		var graphSchema = objectMapper.convertValue(graphSchemaRepresentation.get("graphSchema"), GraphSchema.class);
 
@@ -301,8 +337,16 @@ class JdbcImporterApp implements Callable<Integer> {
 			.collect(Collectors.toSet());
 
 		var graphMappingRepresentation = (Map<String, Object>) dataModel.get("graphMappingRepresentation");
-		var files = ((List<Map<String, Object>>) graphMappingRepresentation.get("fileSchemas"))
-			.stream().collect(Collectors.toMap(m -> new Ref((String) m.get("$id")), m -> (String) m.get("fileName")));
+		Map<Ref, String> files;
+		if (graphMappingRepresentation.containsKey("fileSchemas")) {
+			files = ((List<Map<String, Object>>) graphMappingRepresentation.get("fileSchemas"))
+				.stream().collect(Collectors.toMap(m -> new Ref((String) m.get("$id")), m -> (String) m.get("fileName")));
+		} else if (graphMappingRepresentation.containsKey("dataSourceSchema")) {
+			files = ((List<Map<String, Object>>) ((Map<String, Object>) graphMappingRepresentation.get("dataSourceSchema")).get("entities"))
+				.stream().collect(Collectors.toMap(m -> new Ref((String) m.get("$id")), m -> (String) m.get("name")));
+		} else {
+			throw new RuntimeException("No schema");
+		}
 
 		var nodeMappings = ((List<Map<String, Object>>) graphMappingRepresentation.get("nodeMappings"))
 			.stream().map(nodeMappingMap -> {
@@ -334,8 +378,16 @@ class JdbcImporterApp implements Callable<Integer> {
 	}
 
 	private String computeTableName(Map<String, Object> relMappingMap, Map<Ref, String> files) {
-		var fileSchema = objectMapper.convertValue(relMappingMap.get("fileSchema"), Ref.class);
-		return files.get(fileSchema).replaceAll("(?i)\\.[ct]sv", "");
+
+		Ref schemaRef;
+		if (relMappingMap.containsKey("fileSchema")) {
+			schemaRef = objectMapper.convertValue(relMappingMap.get("fileSchema"), Ref.class);
+		} else if (relMappingMap.containsKey("dataSourceEntity")) {
+			schemaRef = objectMapper.convertValue(relMappingMap.get("dataSourceEntity"), Ref.class);
+		} else {
+			throw new RuntimeException("No file schema or data source entity mapping");
+		}
+		return files.get(schemaRef).replaceAll("(?i)\\.[ct]sv", "");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -387,5 +439,74 @@ class JdbcImporterApp implements Callable<Integer> {
 		List<NodeMapping> nodeMappings,
 		List<RelationshipMapping> relationshipMappings
 	) {
+	}
+
+	@CommandLine.Command(name = "print-metadata")
+	void printMetaData() {
+		try {
+			getSourceMetadata().forEach(System.out::println);
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	record Column(String name, JDBCType type, String typeName, boolean isNullable, boolean isPrimaryKey) {
+
+	}
+
+	record Table(String name, List<Column> columns) {
+	}
+
+	/**
+	 * Constants used in this method are constants from JDBC.
+	 *
+	 * @throws SQLException
+	 */
+	List<Table> getSourceMetadata() throws SQLException {
+
+		var result = new ArrayList<Table>();
+		try (
+			var jdbcConnection = getSourceConnection()
+		) {
+			var databaseMetadata = jdbcConnection.getMetaData();
+
+			try (var tables = databaseMetadata.getTables(null, this.sourceSchema, null, new String[] {"BASE TABLE", "TABLE"})) {
+
+				while (tables.next()) {
+					var tableName = tables.getString("TABLE_NAME");
+					var primaryKeys = new HashSet<String>();
+					try (var rs = databaseMetadata.getPrimaryKeys(null, this.sourceSchema, tableName)) {
+						while (rs.next()) {
+							primaryKeys.add(rs.getString("COLUMN_NAME"));
+						}
+					}
+
+					var columns = new ArrayList<Column>();
+					try (var rs = databaseMetadata.getColumns(null, this.sourceSchema, tableName, null)) {
+						while (rs.next()) {
+							var columnName = rs.getString("COLUMN_NAME");
+							var columnType = JDBCType.valueOf(rs.getInt("DATA_TYPE"));
+							var columnTypeName = rs.getString("TYPE_NAME");
+							columns.add(new Column(columnName, columnType, columnTypeName, isNullable(rs), primaryKeys.contains(columnName)));
+						}
+					}
+					result.add(new Table(tableName, List.copyOf(columns)));
+				}
+			}
+		}
+
+		return List.copyOf(result);
+	}
+
+	private static boolean isNullable(ResultSet columnMeta) throws SQLException {
+		var r = columnMeta.getString("IS_NULLABLE");
+		if (columnMeta.wasNull()) {
+			r = columnMeta.getString("NULLABLE");
+		}
+		return switch (r) {
+			case "columnNoNulls", "NO" -> false;
+			case "columnNullable", "columnNullableUnknown", "YES", "" -> true;
+			default -> false;
+		};
 	}
 }

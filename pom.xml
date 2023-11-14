@@ -8,6 +8,7 @@
 
 	<properties>
 		<appassembler-maven-plugin.version>2.1.0</appassembler-maven-plugin.version>
+		<assertj.version>3.24.2</assertj.version>
 		<cypher-dsl.version>2023.8.1</cypher-dsl.version>
 		<duckdb_jdbc.version>0.9.1</duckdb_jdbc.version>
 		<jackson.version>2.14.2</jackson.version>
@@ -27,6 +28,7 @@
 		<neo4j.image>neo4j:${neo4j.version}-enterprise</neo4j.image>
 		<neo4j.version>5.12.0</neo4j.version>
 		<picocli.version>4.7.0</picocli.version>
+		<postgresql.version>42.6.0</postgresql.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<slf4j-simple.version>1.7.36</slf4j-simple.version>
@@ -41,6 +43,13 @@
 				<groupId>com.fasterxml.jackson</groupId>
 				<artifactId>jackson-bom</artifactId>
 				<version>${jackson.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.assertj</groupId>
+				<artifactId>assertj-bom</artifactId>
+				<version>${assertj.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -93,6 +102,12 @@
 			<version>${neo4j-java-driver.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>${assertj.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.duckdb</groupId>
 			<artifactId>duckdb_jdbc</artifactId>
 			<version>${duckdb_jdbc.version}</version>
@@ -101,6 +116,12 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>${postgresql.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -211,7 +232,6 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
-					<encoding>UTF-8</encoding>
 					<appendAssemblyId>false</appendAssemblyId>
 				</configuration>
 				<executions>

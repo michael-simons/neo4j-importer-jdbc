@@ -27,3 +27,8 @@ CLASSPATH_PREFIX=~/.m2/repository/org/duckdb/duckdb_jdbc/0.9.1/duckdb_jdbc-0.9.1
   --password verysecret \
   ./src/test/resources/states/model.json       
 ```
+
+
+Credits:
+
+* Northwind dataset used from https://github.com/pthom/northwind_psql
