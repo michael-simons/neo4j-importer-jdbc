@@ -194,24 +194,31 @@ class JdbcImporterApp implements Callable<Integer> {
 		var tables = metadata.stream().collect(Collectors.toMap(Table::name, Function.identity()));
 
 		for (var nodeMapping : model.nodeMappings()) {
-			var sourceQuery = createSourceQuery(sqlQuotation, nodeMapping);
+			var sourceQuery = createSourceQuery(tables, sqlQuotation, nodeMapping);
 			var targetQuery = createTargetNodeQuery(cypherQuotation, nodeMapping);
 
 			// Import nodes
 			Object primaryKey = null;
+			int cnt = 0;
 			try (var statement = jdbcConnection.prepareStatement(sourceQuery)) {
 				do {
 					var batch = new ArrayList<Map<String, Object>>();
-					if (primaryKey == null) {
-						var pkCol = tables.get(nodeMapping.source()).columns().stream().filter(Column::isPrimaryKey).findFirst().orElseThrow();
-						var type = pkCol.type().getVendorTypeNumber();
-						statement.setNull(1, type);
-						statement.setNull(2, type);
+					if (tables.containsKey(nodeMapping.source)) {
+						if (primaryKey == null) {
+							var pkCol = tables.get(nodeMapping.source()).columns().stream().filter(Column::isPrimaryKey).findFirst().orElseThrow();
+							var type = pkCol.type().getVendorTypeNumber();
+							statement.setNull(1, type);
+							statement.setNull(2, type);
+						} else {
+							statement.setObject(1, primaryKey);
+							statement.setObject(2, primaryKey);
+						}
+						System.out.println(sourceQuery);
+						statement.setInt(3, batchSize);
 					} else {
-						statement.setObject(1, primaryKey);
-						statement.setObject(2, primaryKey);
+						statement.setInt(1, batchSize);
+						statement.setInt(2, batchSize * cnt++);
 					}
-					statement.setInt(3, batchSize);
 					primaryKey = null;
 
 					try (var result = statement.executeQuery()) {
@@ -258,7 +265,7 @@ class JdbcImporterApp implements Callable<Integer> {
 		);
 	}
 
-	private static String createSourceQuery(UnaryOperator<String> sqlQuotation, NodeMapping nodeMapping) {
+	private static String createSourceQuery(Map<String, Table> tables, UnaryOperator<String> sqlQuotation, NodeMapping nodeMapping) {
 		var tableName = sqlQuotation.apply(nodeMapping.source());
 		var selectList = nodeMapping.propertyMappings()
 			.stream()
@@ -267,12 +274,21 @@ class JdbcImporterApp implements Callable<Integer> {
 			.collect(Collectors.joining(", "));
 		var primaryKey = sqlQuotation.apply(nodeMapping.primaryKey().from);
 
-		return """
-			SELECT %s FROM %s
-			WHERE ? IS NULL OR %3s > ?
-			ORDER BY %3$s
-			LIMIT ?
-			""".formatted(selectList, tableName, primaryKey);
+		if(tables.containsKey(nodeMapping.source())) {
+			return """
+				SELECT %s FROM %s
+				WHERE ? IS NULL OR %3s > ?
+				ORDER BY %3$s
+				LIMIT ?
+				""".formatted(selectList, tableName, primaryKey);
+		} else {
+			return """
+				SELECT %s FROM %s
+				ORDER BY %3$s
+				LIMIT ?
+				OFFSET ?
+				""".formatted(selectList, tableName, primaryKey);
+		}
 	}
 
 	private static String createSourceQuery(UnaryOperator<String> sqlQuotation, RelationshipMapping relationshipMapping) {
