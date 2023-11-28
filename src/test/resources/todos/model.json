@@ -1,0 +1,168 @@
+{
+  "version": "1.1.0",
+  "graph": {
+    "nodes": [
+      {
+        "id": "n0",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "caption": "Todo"
+      }
+    ],
+    "relationships": []
+  },
+  "dataModel": {
+    "version": "1.1.0",
+    "graphSchemaRepresentation": {
+      "version": "1.0.0",
+      "graphSchema": {
+        "nodeLabels": [
+          {
+            "$id": "nl:n0",
+            "token": "Todo"
+          }
+        ],
+        "relationshipTypes": [],
+        "nodeObjectTypes": [
+          {
+            "$id": "n:n0",
+            "labels": [
+              {
+                "$ref": "#nl:n0"
+              }
+            ],
+            "properties": [
+              {
+                "$id": "p:1",
+                "token": "userId",
+                "type": {
+                  "type": "boolean"
+                },
+                "nullable": true
+              },
+              {
+                "$id": "p:2",
+                "token": "id",
+                "type": {
+                  "type": "integer"
+                },
+                "nullable": true
+              },
+              {
+                "$id": "p:3",
+                "token": "title",
+                "type": {
+                  "type": "string"
+                },
+                "nullable": true
+              },
+              {
+                "$id": "p:4",
+                "token": "completed",
+                "type": {
+                  "type": "boolean"
+                },
+                "nullable": true
+              }
+            ]
+          }
+        ],
+        "relationshipObjectTypes": []
+      }
+    },
+    "graphSchemaExtensionsRepresentation": {
+      "nodeKeyProperties": [
+        {
+          "node": {
+            "$ref": "#n:n0"
+          },
+          "keyProperty": {
+            "$ref": "#p:2"
+          }
+        }
+      ]
+    },
+    "graphMappingRepresentation": {
+      "fileSchemas": [
+        {
+          "$id": "t:1",
+          "fileName": "src/test/resources/todos/todos.json",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "userId",
+              "type": "boolean",
+              "sample": "1",
+              "include": true
+            },
+            {
+              "name": "id",
+              "type": "integer",
+              "sample": "1",
+              "include": true
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "sample": "delectus aut autem",
+              "include": true
+            },
+            {
+              "name": "completed",
+              "type": "boolean",
+              "sample": "false",
+              "include": true
+            }
+          ]
+        }
+      ],
+      "nodeMappings": [
+        {
+          "node": {
+            "$ref": "#n:n0"
+          },
+          "fileSchema": {
+            "$ref": "#t:1"
+          },
+          "propertyMappings": [
+            {
+              "fieldName": "userId",
+              "property": {
+                "$ref": "#p:1"
+              }
+            },
+            {
+              "fieldName": "id",
+              "property": {
+                "$ref": "#p:2"
+              }
+            },
+            {
+              "fieldName": "title",
+              "property": {
+                "$ref": "#p:3"
+              }
+            },
+            {
+              "fieldName": "completed",
+              "property": {
+                "$ref": "#p:4"
+              }
+            }
+          ]
+        }
+      ],
+      "relationshipMappings": []
+    },
+    "configurations": {
+      "idsToIgnore": []
+    },
+    "errors": {
+      "fileSchemaErrors": [],
+      "nodeErrors": [],
+      "relationshipErrors": []
+    }
+  }
+}

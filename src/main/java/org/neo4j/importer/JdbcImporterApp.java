@@ -213,7 +213,6 @@ class JdbcImporterApp implements Callable<Integer> {
 							statement.setObject(1, primaryKey);
 							statement.setObject(2, primaryKey);
 						}
-						System.out.println(sourceQuery);
 						statement.setInt(3, batchSize);
 					} else {
 						statement.setInt(1, batchSize);

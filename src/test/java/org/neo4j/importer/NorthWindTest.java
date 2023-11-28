@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.GraphDatabase;
+import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -28,8 +29,8 @@ class NorthWindTest {
 		.waitingFor(Neo4jContainer.WAIT_FOR_BOLT)
 		.withReuse(true);
 
-	protected final DockerComposeContainer environment =
-		new DockerComposeContainer(new File("src/test/resources/pg_northwind/docker-compose.yml"))
+	protected final ComposeContainer environment =
+		new ComposeContainer(new File("src/test/resources/pg_northwind/docker-compose.yml"))
 			.withExposedService("db", 5432);
 
 	@BeforeAll

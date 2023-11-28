@@ -1,7 +1,8 @@
 package org.neo4j.importer;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ParquetViaDuckDBAppTest {
+class JsonAndParquetViaDuckDBAppTest {
 
 	protected final Neo4jContainer<?> neo4j = new Neo4jContainer<>(
 		System.getProperty("neo4j-jdbc.default-neo4j-image"))
@@ -45,7 +46,7 @@ class ParquetViaDuckDBAppTest {
 	}
 
 	@Test
-	void smokeTest() throws Exception {
+	void parquet() throws Exception {
 
 		var app = new JdbcImporterApp();
 		app.model = Paths.get(this.getClass().getResource("/states_parquet/model.json").toURI()).toFile();
@@ -62,5 +63,38 @@ class ParquetViaDuckDBAppTest {
 		app.targetUser = "neo4j";
 		app.targetPassword = neo4j.getAdminPassword().toCharArray();
 		app.call();
+
+		try (var driver = GraphDatabase.driver(neo4j.getBoltUrl(), AuthTokens.basic("neo4j", neo4j.getAdminPassword()));
+		     var session = driver.session()) {
+
+			var numStates = session.run("MATCH (n:State) RETURN count(n)").single().get(0).asLong();
+			assertThat(numStates).isEqualTo(52);
+			var numCounties = session.run("MATCH (n:County) RETURN count(n)").single().get(0).asLong();
+			assertThat(numCounties).isEqualTo(3296);
+		}
+	}
+
+
+	@Test
+	void json() throws Exception {
+
+		var app = new JdbcImporterApp();
+		app.model = Paths.get(this.getClass().getResource("/todos/model.json").toURI()).toFile();
+
+		app.alwaysQuote = true;
+		app.batchSize = 1500;
+
+		app.sourceUrl = "jdbc:duckdb:"; // Just use an in-memory database
+		app.targetUrl = URI.create(neo4j.getBoltUrl());
+		app.targetUser = "neo4j";
+		app.targetPassword = neo4j.getAdminPassword().toCharArray();
+		app.call();
+
+		try (var driver = GraphDatabase.driver(neo4j.getBoltUrl(), AuthTokens.basic("neo4j", neo4j.getAdminPassword()));
+		     var session = driver.session()) {
+
+			var numTodos = session.run("MATCH (n:Todo) RETURN count(n)").single().get(0).asLong();
+			assertThat(numTodos).isEqualTo(200);
+		}
 	}
 }
