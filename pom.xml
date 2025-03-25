@@ -24,9 +24,9 @@
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.8.7</maven.version>
 		<name-of-main-class>org.neo4j.importer.JdbcImporterApp</name-of-main-class>
-		<neo4j-java-driver.version>5.14.0</neo4j-java-driver.version>
+		<neo4j-java-driver.version>5.28.4</neo4j-java-driver.version>
 		<neo4j.image>neo4j:${neo4j.version}-enterprise</neo4j.image>
-		<neo4j.version>5.12.0</neo4j.version>
+		<neo4j.version>5.26</neo4j.version>
 		<picocli.version>4.7.0</picocli.version>
 		<postgresql.version>42.6.0</postgresql.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

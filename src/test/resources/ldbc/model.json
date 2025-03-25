@@ -1,0 +1,808 @@
+{
+  "version": "1.0.0",
+  "graphSchemaRepresentation": {
+    "version": "1.0.0",
+    "graphSchema": {
+      "nodeLabels": [
+        {
+          "$id": "nl:Post",
+          "token": "Post"
+        },
+        {
+          "$id": "nl:Person",
+          "token": "Person"
+        },
+        {
+          "$id": "nl:Comment",
+          "token": "Comment"
+        },
+        {
+          "$id": "nl:Forum",
+          "token": "Forum"
+        },
+        {
+          "$id": "nl:Organisation",
+          "token": "Organisation"
+        },
+        {
+          "$id": "nl:Place",
+          "token": "Place"
+        },
+        {
+          "$id": "nl:Tag",
+          "token": "Tag"
+        },
+        {
+          "$id": "nl:TagClass",
+          "token": "TagClass"
+        }
+      ],
+      "relationshipTypes": [
+        {
+          "$id": "rt:n0",
+          "token": "TAGGED"
+        },
+        {
+          "$id": "rt:WORKS_AT",
+          "token": "WORKS_AT"
+        },
+        {
+          "$id": "rt:LIKES",
+          "token": "LIKES"
+        },
+        {
+          "$id": "rt:STUDY_AT",
+          "token": "STUDY_AT"
+        },
+        {
+          "$id": "rt:LOCATED",
+          "token": "LOCATED"
+        }
+      ],
+      "nodeObjectTypes": [
+        {
+          "$id": "PostNode",
+          "labels": [
+            {
+              "$ref": "#nl:Post"
+            }
+          ],
+          "properties": [
+            {
+              "$id": "p:11",
+              "token": "id",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            },
+            {
+              "$id": "p:12",
+              "token": "content",
+              "type": {
+                "type": "string"
+              },
+              "nullable": false
+            }
+          ]
+        },
+        {
+          "$id": "PersonNode",
+          "labels": [
+            {
+              "$ref": "#nl:Person"
+            }
+          ],
+          "properties": [
+            {
+              "$id": "p:PersonId",
+              "token": "id",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            },
+            {
+              "$id": "p:firstName",
+              "token": "firstName",
+              "type": {
+                "type": "string"
+              },
+              "nullable": false
+            },
+            {
+              "$id": "p:lastName",
+              "token": "lastName",
+              "type": {
+                "type": "string"
+              },
+              "nullable": false
+            }
+          ]
+        },
+        {
+          "$id": "CommentNode",
+          "labels": [
+            {
+              "$ref": "#nl:Comment"
+            }
+          ],
+          "properties": [
+            {
+              "$id": "p:CommentId",
+              "token": "id",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            }
+          ]
+        },
+        {
+          "$id": "ForumNode",
+          "labels": [
+            {
+              "$ref": "#nl:Forum"
+            }
+          ],
+          "properties": [
+            {
+              "$id": "p:ForumId",
+              "token": "id",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            }
+          ]
+        },
+        {
+          "$id": "OrganisationNode",
+          "labels": [
+            {
+              "$ref": "#nl:Organisation"
+            }
+          ],
+          "properties": [
+            {
+              "$id": "p:OrganisationId",
+              "token": "id",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            },
+            {
+              "$id": "p:type",
+              "token": "type",
+              "type": {
+                "type": "string"
+              },
+              "nullable": false
+            }
+          ]
+        },
+        {
+          "$id": "PlaceNode",
+          "labels": [
+            {
+              "$ref": "#nl:Place"
+            }
+          ],
+          "properties": [
+            {
+              "$id": "p:PlaceId",
+              "token": "id",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            }
+          ]
+        },
+        {
+          "$id": "TagClassNode",
+          "labels": [
+            {
+              "$ref": "#nl:TagClass"
+            }
+          ],
+          "properties": [
+            {
+              "$id": "p:TagClassId",
+              "token": "id",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            }
+          ]
+        },
+        {
+          "$id": "TagNode",
+          "labels": [
+            {
+              "$ref": "#nl:Tag"
+            }
+          ],
+          "properties": [
+            {
+              "$id": "p:21",
+              "token": "id",
+              "type": {
+                "type": "integer"
+              },
+              "nullable": false
+            },
+            {
+              "$id": "p:22",
+              "token": "name",
+              "type": {
+                "type": "string"
+              },
+              "nullable": false
+            }
+          ]
+        }
+      ],
+      "relationshipObjectTypes": [
+        {
+          "$id": "TAGGED",
+          "type": {
+            "$ref": "#rt:n0"
+          },
+          "from": {
+            "$ref": "#PostNode"
+          },
+          "to": {
+            "$ref": "#TagNode"
+          },
+          "properties": []
+        },
+        {
+          "$id": "WORKS_AT",
+          "type": {
+            "$ref": "#rt:WORKS_AT"
+          },
+          "from": {
+            "$ref": "#PersonNode"
+          },
+          "to": {
+            "$ref": "#OrganisationNode"
+          },
+          "properties": []
+        },
+        {
+          "$id": "LIKES_POST",
+          "type": {
+            "$ref": "#rt:LIKES"
+          },
+          "from": {
+            "$ref": "#PersonNode"
+          },
+          "to": {
+            "$ref": "#PostNode"
+          },
+          "properties": []
+        },
+        {
+          "$id": "STUDY_AT",
+          "type": {
+            "$ref": "#rt:STUDY_AT"
+          },
+          "from": {
+            "$ref": "#PersonNode"
+          },
+          "to": {
+            "$ref": "#OrganisationNode"
+          },
+          "properties": []
+        },
+        {
+          "$id": "LIKES_COMMENT",
+          "type": {
+            "$ref": "#rt:LIKES"
+          },
+          "from": {
+            "$ref": "#PersonNode"
+          },
+          "to": {
+            "$ref": "#CommentNode"
+          },
+          "properties": []
+        },
+        {
+          "$id": "LOCATED",
+          "type": {
+            "$ref": "#rt:LOCATED"
+          },
+          "from": {
+            "$ref": "#OrganisationNode"
+          },
+          "to": {
+            "$ref": "#PlaceNode"
+          },
+          "properties": []
+        }
+      ]
+    }
+  },
+  "graphSchemaExtensionsRepresentation": {
+    "nodeKeyProperties": [
+      {
+        "node": {
+          "$ref": "#PostNode"
+        },
+        "keyProperty": {
+          "$ref": "#p:11"
+        }
+      },
+      {
+        "node": {
+          "$ref": "#PersonNode"
+        },
+        "keyProperty": {
+          "$ref": "#p:PersonId"
+        }
+      },
+      {
+        "node": {
+          "$ref": "#CommentNode"
+        },
+        "keyProperty": {
+          "$ref": "#p:CommentId"
+        }
+      },
+      {
+        "node": {
+          "$ref": "#ForumNode"
+        },
+        "keyProperty": {
+          "$ref": "#p:ForumId"
+        }
+      },
+      {
+        "node": {
+          "$ref": "#OrganisationNode"
+        },
+        "keyProperty": {
+          "$ref": "#p:OrganisationId"
+        }
+      },
+      {
+        "node": {
+          "$ref": "#PlaceNode"
+        },
+        "keyProperty": {
+          "$ref": "#p:PlaceId"
+        }
+      },
+      {
+        "node": {
+          "$ref": "#TagClassNode"
+        },
+        "keyProperty": {
+          "$ref": "#p:TagClassId"
+        }
+      },
+      {
+        "node": {
+          "$ref": "#TagNode"
+        },
+        "keyProperty": {
+          "$ref": "#p:21"
+        }
+      }
+    ]
+  },
+  "graphMappingRepresentation": {
+    "dataSourceSchema": {
+      "type": "sql/postgres",
+      "database": "northwind",
+      "credentialsId": "1",
+      "entities": [
+        {
+          "$id": "PostTable",
+          "name": "post",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": true
+            },
+            {
+              "name": "content",
+              "type": "string",
+              "sample": "",
+              "isPrimary": false
+            }
+          ]
+        },
+        {
+          "$id": "TagTable",
+          "name": "tag",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": true
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "sample": "",
+              "isPrimary": false
+            }
+          ]
+        },
+        {
+          "$id": "personTable",
+          "name": "person",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": true
+            }
+          ]
+        },
+        {
+          "$id": "commentTable",
+          "name": "comment",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": true
+            }
+          ]
+        },
+        {
+          "$id": "forumTable",
+          "name": "forum",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": true
+            }
+          ]
+        },
+        {
+          "$id": "organisationTable",
+          "name": "organisation",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": true
+            }
+          ]
+        },
+        {
+          "$id": "placeTable",
+          "name": "place",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": true
+            }
+          ]
+        },
+        {
+          "$id": "tagclassTable",
+          "name": "tagClass",
+          "expanded": true,
+          "fields": [
+            {
+              "name": "id",
+              "type": "integer",
+              "sample": "",
+              "isPrimary": true
+            }
+          ]
+        },
+        {
+          "$id": "postHasTag",
+          "name": "posthastag",
+          "expanded": true,
+          "fields": []
+        },
+        {
+          "$id": "personWorksAtCompany",
+          "name": "personworksatcompany",
+          "expanded": true,
+          "fields": []
+        },
+        {
+          "$id": "personLikesPost",
+          "name": "personlikespost",
+          "expanded": true,
+          "fields": []
+        },
+        {
+          "$id": "personStudyAtUniversity",
+          "name": "personstudyatuniversity",
+          "expanded": true,
+          "fields": []
+        },
+        {
+          "$id": "personLikesComment",
+          "name": "personlikescomment",
+          "expanded": true,
+          "fields": []
+        }
+      ]
+    },
+    "nodeMappings": [
+      {
+        "node": {
+          "$ref": "#PostNode"
+        },
+        "dataSourceEntity": {
+          "$ref": "#PostTable"
+        },
+        "propertyMappings": [
+          {
+            "property": {
+              "$ref": "#p:11"
+            },
+            "fieldName": "id"
+          },
+          {
+            "property": {
+              "$ref": "#p:12"
+            },
+            "fieldName": "content"
+          }
+        ]
+      },
+      {
+        "node": {
+          "$ref": "#TagNode"
+        },
+        "dataSourceEntity": {
+          "$ref": "#TagTable"
+        },
+        "propertyMappings": [
+          {
+            "property": {
+              "$ref": "#p:21"
+            },
+            "fieldName": "id"
+          },
+          {
+            "property": {
+              "$ref": "#p:22"
+            },
+            "fieldName": "name"
+          }
+        ]
+      },
+      {
+        "node": {
+          "$ref": "#PersonNode"
+        },
+        "dataSourceEntity": {
+          "$ref": "#personTable"
+        },
+        "propertyMappings": [
+          {
+            "property": {
+              "$ref": "#p:PersonId"
+            },
+            "fieldName": "id"
+          },
+          {
+            "property": {
+              "$ref": "#p:firstName"
+            },
+            "fieldName": "firstName"
+          },
+          {
+            "property": {
+              "$ref": "#p:lastName"
+            },
+            "fieldName": "lastName"
+          }
+        ]
+      },
+      {
+        "node": {
+          "$ref": "#CommentNode"
+        },
+        "dataSourceEntity": {
+          "$ref": "#commentTable"
+        },
+        "propertyMappings": [
+          {
+            "property": {
+              "$ref": "#p:CommentId"
+            },
+            "fieldName": "id"
+          }
+        ]
+      },
+      {
+        "node": {
+          "$ref": "#ForumNode"
+        },
+        "dataSourceEntity": {
+          "$ref": "#forumTable"
+        },
+        "propertyMappings": [
+          {
+            "property": {
+              "$ref": "#p:ForumId"
+            },
+            "fieldName": "id"
+          }
+        ]
+      },
+      {
+        "node": {
+          "$ref": "#OrganisationNode"
+        },
+        "dataSourceEntity": {
+          "$ref": "#organisationTable"
+        },
+        "propertyMappings": [
+          {
+            "property": {
+              "$ref": "#p:OrganisationId"
+            },
+            "fieldName": "id"
+          },
+          {
+            "property": {
+              "$ref": "#p:type"
+            },
+            "fieldName": "type"
+          }
+        ]
+      },
+      {
+        "node": {
+          "$ref": "#PlaceNode"
+        },
+        "dataSourceEntity": {
+          "$ref": "#placeTable"
+        },
+        "propertyMappings": [
+          {
+            "property": {
+              "$ref": "#p:PlaceId"
+            },
+            "fieldName": "id"
+          }
+        ]
+      },
+      {
+        "node": {
+          "$ref": "#TagClassNode"
+        },
+        "dataSourceEntity": {
+          "$ref": "#tagclassTable"
+        },
+        "propertyMappings": [
+          {
+            "property": {
+              "$ref": "#p:TagClassId"
+            },
+            "fieldName": "id"
+          }
+        ]
+      }
+    ],
+    "relationshipMappings": [
+      {
+        "relationship": {
+          "$ref": "#TAGGED"
+        },
+        "dataSourceEntity": {
+          "$ref": "#postHasTag"
+        },
+        "propertyMappings": [],
+        "fromMapping": {
+          "fieldName": "postId"
+        },
+        "toMapping": {
+          "fieldName": "tagId"
+        }
+      },
+      {
+        "relationship": {
+          "$ref": "#WORKS_AT"
+        },
+        "dataSourceEntity": {
+          "$ref": "#personWorksAtCompany"
+        },
+        "propertyMappings": [],
+        "fromMapping": {
+          "fieldName": "personId"
+        },
+        "toMapping": {
+          "fieldName": "companyId"
+        }
+      },
+      {
+        "relationship": {
+          "$ref": "#LIKES_POST"
+        },
+        "dataSourceEntity": {
+          "$ref": "#personLikesPost"
+        },
+        "propertyMappings": [],
+        "fromMapping": {
+          "fieldName": "personId"
+        },
+        "toMapping": {
+          "fieldName": "postId"
+        }
+      },
+      {
+        "relationship": {
+          "$ref": "#STUDY_AT"
+        },
+        "dataSourceEntity": {
+          "$ref": "#personStudyAtUniversity"
+        },
+        "propertyMappings": [],
+        "fromMapping": {
+          "fieldName": "personId"
+        },
+        "toMapping": {
+          "fieldName": "universityId"
+        }
+      },
+      {
+        "relationship": {
+          "$ref": "#LIKES_COMMENT"
+        },
+        "dataSourceEntity": {
+          "$ref": "#personLikesComment"
+        },
+        "propertyMappings": [],
+        "fromMapping": {
+          "fieldName": "personId"
+        },
+        "toMapping": {
+          "fieldName": "commentId"
+        }
+      },
+      {
+        "relationship": {
+          "$ref": "#LOCATED"
+        },
+        "dataSourceEntity": {
+          "$ref": "#organisationTable"
+        },
+        "propertyMappings": [],
+        "fromMapping": {
+          "fieldName": "id"
+        },
+        "toMapping": {
+          "fieldName": "locationPlaceId"
+        }
+      }
+    ]
+  },
+  "configurations": {
+    "idsToIgnore": []
+  }
+}
