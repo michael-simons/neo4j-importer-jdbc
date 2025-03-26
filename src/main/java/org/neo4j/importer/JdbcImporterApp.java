@@ -211,7 +211,7 @@ class JdbcImporterApp implements Callable<Integer> {
 		} finally {
 			this.permits.drainPermits();
 			var end = System.nanoTime();
-			LOGGER.log(Level.INFO, () -> "Finished importNodes after %s".formatted(Duration.ofNanos(end - start)));
+			LOGGER.log(Level.INFO, () -> "Finished importRelationships after %s".formatted(Duration.ofNanos(end - start)));
 		}
 	}
 
