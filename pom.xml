@@ -10,10 +10,11 @@
 		<appassembler-maven-plugin.version>2.1.0</appassembler-maven-plugin.version>
 		<assertj.version>3.24.2</assertj.version>
 		<cypher-dsl.version>2023.8.1</cypher-dsl.version>
+		<dotenv-java.version>3.2.0</dotenv-java.version>
 		<duckdb_jdbc.version>0.9.1</duckdb_jdbc.version>
 		<jackson.version>2.14.2</jackson.version>
-		<java.version>17</java.version>
-		<junit-jupiter.version>5.10.1</junit-jupiter.version>
+		<java.version>21</java.version>
+		<junit-jupiter.version>5.12.1</junit-jupiter.version>
 		<maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
 		<maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
@@ -92,6 +93,11 @@
 			<version>${picocli.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>dotenv-java</artifactId>
+			<version>${dotenv-java.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-cypher-dsl-schema-name-support</artifactId>
 			<version>${cypher-dsl.version}</version>
@@ -126,7 +132,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
+			<artifactId>slf4j-nop</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

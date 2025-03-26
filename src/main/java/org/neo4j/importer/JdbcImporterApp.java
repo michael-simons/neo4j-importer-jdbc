@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,8 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,6 +40,8 @@ import picocli.CommandLine;
 
 @CommandLine.Command(name = "neo4j-load-so", mixinStandardHelpOptions = true)
 class JdbcImporterApp implements Callable<Integer> {
+
+	static final Logger LOGGER = Logger.getLogger("org.neo4j.importer");
 
 	@CommandLine.Option(
 		names = {"-s", "--source"},
@@ -94,6 +101,14 @@ class JdbcImporterApp implements Callable<Integer> {
 	int batchSize;
 
 	@CommandLine.Option(
+		names = {"--max-concurrent-batches"},
+		description = "Maximum number of concurrent batches",
+		required = true,
+		defaultValue = "4"
+	)
+	int maxConcurrentBatches;
+
+	@CommandLine.Option(
 		names = {"--always-quote"},
 		description = "Whether to always quote identifiers",
 		defaultValue = "true"
@@ -104,6 +119,8 @@ class JdbcImporterApp implements Callable<Integer> {
 	File model;
 
 	private final ObjectMapper objectMapper;
+
+	private final Semaphore permits = new Semaphore(0);
 
 	public static void main(String... args) {
 		var commandLine = new CommandLine(new JdbcImporterApp());
@@ -151,96 +168,134 @@ class JdbcImporterApp implements Callable<Integer> {
 
 	private void importRelationships(MappingModel model, UnaryOperator<String> sqlQuotation, UnaryOperator<String> cypherQuotation, Connection jdbcConnection, Driver neo4jConnection) throws SQLException {
 
-		for (var relationshipMapping : model.relationshipMappings()) {
-			var sourceQuery = createSourceQuery(sqlQuotation, relationshipMapping);
-			var targetQuery = createTargetQuery(cypherQuotation, relationshipMapping);
+		LOGGER.log(Level.INFO, () -> "Starting importRelationships with a batch size of %d with at max %d concurrent batches".formatted(this.batchSize, this.maxConcurrentBatches));
+		var start = System.nanoTime();
+		this.permits.release(this.maxConcurrentBatches);
+		try (var executors = Executors.newVirtualThreadPerTaskExecutor()) {
+			for (var relationshipMapping : model.relationshipMappings()) {
+				var sourceQuery = createSourceQuery(sqlQuotation, relationshipMapping);
+				var targetQuery = createTargetQuery(cypherQuotation, relationshipMapping);
 
-			int offset = 0;
-			var batch = new ArrayList<Map<String, Object>>();
-			try (var statement = jdbcConnection.prepareStatement(sourceQuery)) {
-				do {
-					batch.clear();
+				int offset = 0;
 
-					statement.setInt(1, batchSize);
-					statement.setInt(2, offset);
+				try (var statement = jdbcConnection.prepareStatement(sourceQuery)) {
+					do {
+						var batch = new ArrayList<Map<String, Object>>();
 
-					try (var result = statement.executeQuery()) {
-						while (result.next()) {
-							var properties = new HashMap<String, Object>(relationshipMapping.propertyMappings().size());
-							for (var propertyMapping : relationshipMapping.propertyMappings()) {
-								properties.put(propertyMapping.to, result.getObject(propertyMapping.from));
+						statement.setInt(1, batchSize);
+						statement.setInt(2, offset);
+
+						try (var result = statement.executeQuery()) {
+							while (result.next()) {
+								var properties = new HashMap<String, Object>(relationshipMapping.propertyMappings().size());
+								for (var propertyMapping : relationshipMapping.propertyMappings()) {
+									properties.put(propertyMapping.to, result.getObject(propertyMapping.from));
+								}
+								var fromId = result.getObject(relationshipMapping.sourceNode.column());
+								var toId = result.getObject(relationshipMapping.targetNode().column());
+								batch.add(Map.of("sourceProperty", fromId, "targetProperty", toId, "properties", properties));
 							}
-							var fromId = result.getObject(relationshipMapping.sourceNode.column());
-							var toId = result.getObject(relationshipMapping.targetNode().column());
-							batch.add(Map.of("sourceProperty", fromId, "targetProperty", toId, "properties", properties));
 						}
-					}
-					offset += batch.size();
+						offset += batch.size();
 
-					if (!batch.isEmpty()) {
-						var counters = neo4jConnection.executableQuery(targetQuery)
-							.withParameters(Map.of("rows", batch))
-							.execute()
-							.summary().counters();
-						System.out.println(counters);
-					}
-				} while (!batch.isEmpty());
+						if (batch.isEmpty()) {
+							break;
+						} else if (sequential()) {
+							executeBatch(neo4jConnection, targetQuery, batch);
+						} else {
+							executors.submit(() -> executeBatch(neo4jConnection, targetQuery, batch));
+						}
+					} while (true);
+				}
 			}
+		} finally {
+			this.permits.drainPermits();
+			var end = System.nanoTime();
+			LOGGER.log(Level.INFO, () -> "Finished importNodes after %s".formatted(Duration.ofNanos(end - start)));
+		}
+	}
+
+	private void executeBatch(Driver neo4jConnection, String targetQuery, ArrayList<Map<String, Object>> batch) {
+		try {
+			LOGGER.log(Level.FINE, () -> "Acquiring permit (%d available)".formatted(this.permits.availablePermits()));
+			this.permits.acquire();
+			var counters = neo4jConnection.executableQuery(targetQuery)
+				.withParameters(Map.of("rows", batch))
+				.execute()
+				.summary().counters();
+			LOGGER.log(Level.FINE, () -> "%s: %s".formatted(Thread.currentThread(), counters));
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} finally {
+			this.permits.release();
 		}
 	}
 
 	private void importNodes(MappingModel model, List<Table> metadata, UnaryOperator<String> sqlQuotation, UnaryOperator<String> cypherQuotation, Connection jdbcConnection, Driver neo4jConnection) throws SQLException {
 
+		LOGGER.log(Level.INFO, () -> "Starting importNodes with a batch size of %d with at max %d concurrent batches".formatted(this.batchSize, this.maxConcurrentBatches));
+		var start = System.nanoTime();
 		var tables = metadata.stream().collect(Collectors.toMap(Table::name, Function.identity()));
+		this.permits.release(this.maxConcurrentBatches);
+		try (var executors = Executors.newVirtualThreadPerTaskExecutor()) {
 
-		for (var nodeMapping : model.nodeMappings()) {
-			var sourceQuery = createSourceQuery(tables, sqlQuotation, nodeMapping);
-			var targetQuery = createTargetNodeQuery(cypherQuotation, nodeMapping);
+			for (var nodeMapping : model.nodeMappings()) {
+				var sourceQuery = createSourceQuery(tables, sqlQuotation, nodeMapping);
+				var targetQuery = createTargetNodeQuery(cypherQuotation, nodeMapping);
 
-			// Import nodes
-			Object primaryKey = null;
-			int cnt = 0;
-			try (var statement = jdbcConnection.prepareStatement(sourceQuery)) {
-				do {
-					var batch = new ArrayList<Map<String, Object>>();
-					if (tables.containsKey(nodeMapping.source)) {
-						if (primaryKey == null) {
-							var pkCol = tables.get(nodeMapping.source()).columns().stream().filter(Column::isPrimaryKey).findFirst().orElseThrow();
-							var type = pkCol.type().getVendorTypeNumber();
-							statement.setNull(1, type);
-							statement.setNull(2, type);
-						} else {
-							statement.setObject(1, primaryKey);
-							statement.setObject(2, primaryKey);
-						}
-						statement.setInt(3, batchSize);
-					} else {
-						statement.setInt(1, batchSize);
-						statement.setInt(2, batchSize * cnt++);
-					}
-					primaryKey = null;
-
-					try (var result = statement.executeQuery()) {
-						while (result.next()) {
-							var properties = new HashMap<String, Object>(nodeMapping.propertyMappings().size());
-							for (var propertyMapping : nodeMapping.propertyMappings()) {
-								properties.put(propertyMapping.to, result.getObject(propertyMapping.from));
+				// Import nodes
+				Object primaryKey = null;
+				int cnt = 0;
+				try (var statement = jdbcConnection.prepareStatement(sourceQuery)) {
+					do {
+						var batch = new ArrayList<Map<String, Object>>();
+						if (tables.containsKey(nodeMapping.source)) {
+							if (primaryKey == null) {
+								var pkCol = tables.get(nodeMapping.source()).columns().stream().filter(Column::isPrimaryKey).findFirst().orElseThrow();
+								var type = pkCol.type().getVendorTypeNumber();
+								statement.setNull(1, type);
+								statement.setNull(2, type);
+							} else {
+								statement.setObject(1, primaryKey);
+								statement.setObject(2, primaryKey);
 							}
-							primaryKey = result.getObject(nodeMapping.primaryKey().from);
-							batch.add(Map.of("primaryKey", primaryKey, "properties", properties));
+							statement.setInt(3, batchSize);
+						} else {
+							statement.setInt(1, batchSize);
+							statement.setInt(2, batchSize * cnt++);
 						}
-					}
+						primaryKey = null;
 
-					if (!batch.isEmpty()) {
-						var counters = neo4jConnection.executableQuery(targetQuery)
-							.withParameters(Map.of("rows", batch))
-							.execute()
-							.summary().counters();
-						System.out.println(counters);
-					}
-				} while (primaryKey != null);
+						try (var result = statement.executeQuery()) {
+							while (result.next()) {
+								var properties = new HashMap<String, Object>(nodeMapping.propertyMappings().size());
+								for (var propertyMapping : nodeMapping.propertyMappings()) {
+									properties.put(propertyMapping.to, result.getObject(propertyMapping.from));
+								}
+								primaryKey = result.getObject(nodeMapping.primaryKey().from);
+								batch.add(Map.of("primaryKey", primaryKey, "properties", properties));
+							}
+						}
+
+						if (!batch.isEmpty()) {
+							if (sequential()) {
+								executeBatch(neo4jConnection, targetQuery, batch);
+							} else {
+								executors.submit(() -> executeBatch(neo4jConnection, targetQuery, batch));
+							}
+						}
+					} while (primaryKey != null);
+				}
 			}
+		} finally {
+			this.permits.drainPermits();
+			var end = System.nanoTime();
+			LOGGER.log(Level.INFO, () -> "Finished importNodes after %s".formatted(Duration.ofNanos(end - start)));
 		}
+	}
+
+	private boolean sequential() {
+		return Math.max(maxConcurrentBatches, 1) == 1;
 	}
 
 	private static void createIndexes(MappingModel model, Driver neo4jConnection, UnaryOperator<String> cypherQuotation) {
@@ -273,7 +328,7 @@ class JdbcImporterApp implements Callable<Integer> {
 			.collect(Collectors.joining(", "));
 		var primaryKey = sqlQuotation.apply(nodeMapping.primaryKey().from);
 
-		if(tables.containsKey(nodeMapping.source())) {
+		if (tables.containsKey(nodeMapping.source())) {
 			return """
 				SELECT %s FROM %s
 				WHERE ? IS NULL OR %3s > ?
@@ -459,7 +514,7 @@ class JdbcImporterApp implements Callable<Integer> {
 	@CommandLine.Command(name = "print-metadata")
 	void printMetaData() {
 		try {
-			getSourceMetadata().forEach(System.out::println);
+			getSourceMetadata().forEach(System.err::println);
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
